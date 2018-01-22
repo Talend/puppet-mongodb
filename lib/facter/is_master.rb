@@ -37,7 +37,11 @@ Facter.add('mongodb_is_master') do
 
       if $?.success?
         mongo_output = Facter::Core::Execution.exec("mongo --quiet #{mongoPort} --eval \"#{e}printjson(db.isMaster())\"")
-        JSON.parse(mongo_output.gsub(/ISODate\((.+?)\)/, '\1 '))['ismaster'] ||= false
+        begin
+          JSON.parse(mongo_output.gsub(/ISODate\((.+?)\)/, '\1 '))['ismaster'] ||= false
+        rescue # In auth mode, we can have an error here
+          'unknown'
+        end
       else
         'not_responding'
       end
