@@ -81,10 +81,6 @@ class Puppet::Provider::Mongodb < Puppet::Provider
   def self.mongo_cmd(db, host, cmd)
     config = get_mongo_conf
 
-    if auth_enabled(config)
-      db = 'admin'
-    end
-
     args = [db, '--quiet', '--host', host]
     args.push('--ipv6') if ipv6_is_enabled(config)
 
@@ -134,18 +130,14 @@ class Puppet::Provider::Mongodb < Puppet::Provider
   end
 
   def self.db_ismaster
-    cmd_ismaster = 'printjson(db.isMaster())'
+    cmd_ismaster = 'printjson(db.isMaster().ismaster)'
     if mongorc_file
       cmd_ismaster = mongorc_file + cmd_ismaster
     end
     db = 'admin'
     out = mongo_cmd(db, get_conn_string, cmd_ismaster)
-    out.gsub!(/ObjectId\(([^)]*)\)/, '\1')
-    out.gsub!(/ISODate\((.+?)\)/, '\1 ')
-    out.gsub!(/^Error\:.+/, '')
-    res = JSON.parse out
 
-    return res['ismaster']
+    return out
   end
 
   def db_ismaster

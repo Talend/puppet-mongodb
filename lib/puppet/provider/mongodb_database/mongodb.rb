@@ -8,7 +8,11 @@ Puppet::Type.type(:mongodb_database).provide(:mongodb, :parent => Puppet::Provid
   def self.instances
     require 'json'
     begin
-      dbs = JSON.parse mongo_eval('printjson(db.getMongo().getDBs())')
+      if db_ismaster
+        dbs = JSON.parse mongo_eval('printjson(db.getMongo().getDBs())')
+      else
+        dbs = JSON.parse mongo_eval('rs.slaveOk(); printjson(db.getMongo().getDBs())')
+      end
     rescue Puppet::ExecutionFailure => e
       Puppet.warning "Unable to list mongo databases due to error #{e.inspect()}"
     end
@@ -32,8 +36,7 @@ Puppet::Type.type(:mongodb_database).provide(:mongodb, :parent => Puppet::Provid
 
   def create
     if db_ismaster
-      #mongo_eval('db.dummyData.insert({"created_by_puppet": 1})', @resource[:name])
-      mongo_eval("db.getSiblingDB('#{@resource[:name]}').dummyData.insert({'created_by_puppet': 1})", @resource[:name])
+      mongo_eval('db.dummyData.insert({"created_by_puppet": 1})', @resource[:name])
     else
       Puppet.warning 'Database creation is available only from master host'
     end

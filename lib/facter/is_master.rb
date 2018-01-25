@@ -1,4 +1,3 @@
-require 'json'
 require 'yaml'
 
 def get_mongod_conf_file
@@ -36,12 +35,7 @@ Facter.add('mongodb_is_master') do
       Facter::Core::Execution.exec("mongo --quiet #{mongoPort} --eval \"#{e}printjson(db.adminCommand({ ping: 1 }))\"")
 
       if $?.success?
-        mongo_output = Facter::Core::Execution.exec("mongo --quiet #{mongoPort} --eval \"#{e}printjson(db.isMaster())\"")
-        begin
-          JSON.parse(mongo_output.gsub(/ISODate\((.+?)\)/, '\1 '))['ismaster'] ||= false
-        rescue # In auth mode, we can have an error here
-          'unknown'
-        end
+        Facter::Core::Execution.exec("mongo --quiet #{mongoPort} --eval \"#{e}printjson(db.isMaster().ismaster)\"")
       else
         'not_responding'
       end
